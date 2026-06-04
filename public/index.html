@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invoice Zero</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#f8fafc;--card:#ffffff;--border:#e2e8f0;--accent:#3b82f6;--accent-dark:#2563eb;--text:#1e293b;--dim:#64748b;--green:#059669;--red:#dc2626;--yellow:#d97706;--surface:#f1f5f9}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.layout{display:flex;min-height:100vh}
+.sidebar{width:240px;background:var(--card);border-right:1px solid var(--border);padding:24px 0;flex-shrink:0;position:fixed;top:0;bottom:0;left:0;overflow-y:auto}
+.logo{padding:0 20px 24px;font-weight:700;font-size:1.1em;color:var(--accent)}
+.logo span{font-weight:400;color:var(--dim)}
+.nav-item{padding:10px 20px;cursor:pointer;color:var(--dim);font-size:14px;display:flex;align-items:center;gap:10px;transition:all .15s}
+.nav-item:hover{color:var(--text);background:var(--surface)}
+.nav-item.active{color:var(--accent);background:#eff6ff;border-left:3px solid var(--accent);font-weight:500}
+.main{flex:1;margin-left:240px;padding:32px}
+.page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
+.page-header h1{font-size:1.4em;font-weight:600}
+.btn{padding:9px 18px;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;transition:all .15s}
+.btn-primary{background:var(--accent);color:white}.btn-primary:hover{background:var(--accent-dark)}
+.btn-ghost{background:transparent;color:var(--dim);border:1px solid var(--border)}.btn-ghost:hover{color:var(--text);border-color:var(--dim)}
+.btn-danger{background:transparent;color:var(--red);border:1px solid var(--red)}.btn-danger:hover{background:var(--red);color:white}
+.btn-sm{padding:6px 12px;font-size:13px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:28px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px}
+.stat-val{font-size:1.8em;font-weight:700;color:var(--text);margin-bottom:4px}
+.stat-label{color:var(--dim);font-size:13px}
+.stat-val.green{color:var(--green)}.stat-val.yellow{color:var(--yellow)}
+table{width:100%;border-collapse:collapse}
+th,td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--border);font-size:14px}
+th{color:var(--dim);font-weight:500;font-size:13px;background:var(--surface)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface)}
+.badge{padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500}
+.badge-draft{background:#f1f5f9;color:var(--dim)}
+.badge-sent{background:#dbeafe;color:#1d4ed8}
+.badge-paid{background:#d1fae5;color:#065f46}
+.badge-overdue{background:#fee2e2;color:var(--red)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;display:flex;align-items:center;justify-content:center}
+.modal{background:var(--card);border-radius:16px;padding:32px;width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+.modal h2{margin-bottom:24px;font-size:1.1em}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;margin-bottom:6px;font-size:13px;color:var(--dim);font-weight:500}
+.form-group input,.form-group select,.form-group textarea{width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:14px;color:var(--text);background:white;outline:none;font-family:inherit}
+.form-group input:focus,.form-group select:focus{border-color:var(--accent)}
+.form-group textarea{resize:vertical;min-height:80px}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:24px;padding-top:20px;border-top:1px solid var(--border)}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--text);color:white;border-radius:10px;padding:12px 18px;font-size:14px;z-index:200;opacity:0;transition:.3s}
+.toast.show{opacity:1}
+.empty{text-align:center;padding:60px;color:var(--dim)}
+.invoice-items table{margin:0}
+.item-row td{padding:8px 4px}
+</style>
+</head>
+<body>
+<div class="layout">
+<div class="sidebar">
+  <div class="logo">Invoice<span>Zero</span></div>
+  <div class="nav-item active" id="nav-dashboard" onclick="navigate('dashboard')">📊 Dashboard</div>
+  <div class="nav-item" id="nav-invoices" onclick="navigate('invoices')">🧾 Invoices</div>
+  <div class="nav-item" id="nav-clients" onclick="navigate('clients')">👥 Clients</div>
+  <div class="nav-item" id="nav-time" onclick="navigate('time')">⏱ Time Tracking</div>
+  <div class="nav-item" id="nav-settings" onclick="navigate('settings')">⚙️ Business Info</div>
+</div>
+<div class="main" id="main">Loading...</div>
+</div>
+
+<script>
+const API = '';
+let page = 'dashboard';
+let clients = [], invoices = [], timeEntries = [], business = {}, stats = {};
+
+async function api(method, path, body) {
+  const opts = { method, headers: {'Content-Type':'application/json'} };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(API + path, opts);
+  if (r.status === 204) return null;
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || 'Error');
+  return d;
+}
+
+function toast(msg, ok = true) {
+  let t = document.querySelector('.toast');
+  if (!t) { t = document.createElement('div'); t.className = 'toast'; document.body.appendChild(t); }
+  t.textContent = msg;
+  t.style.background = ok ? '#1e293b' : '#dc2626';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+async function loadAll() {
+  [clients, invoices, timeEntries, business, stats] = await Promise.all([
+    api('GET','/api/clients'), api('GET','/api/invoices'), api('GET','/api/time'),
+    api('GET','/api/business'), api('GET','/api/stats')
+  ]);
+}
+
+function navigate(p) {
+  page = p;
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('nav-' + p)?.classList.add('active');
+  render();
+}
+
+function fmt(n) { return '$' + (n||0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+function fmtDate(d) { return d ? new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—'; }
+function statusBadge(s) { return `<span class="badge badge-${s}">${s}</span>`; }
+
+function render() {
+  const main = document.getElementById('main');
+  if (page === 'dashboard') {
+    main.innerHTML = `
+    <div class="page-header"><h1>Dashboard</h1><button class="btn btn-primary" onclick="showCreateInvoice()">+ New Invoice</button></div>
+    <div class="stats-grid">
+      <div class="stat"><div class="stat-val green">${fmt(stats.paidTotal)}</div><div class="stat-label">Total Paid</div></div>
+      <div class="stat"><div class="stat-val yellow">${fmt(stats.outstandingTotal)}</div><div class="stat-label">Outstanding</div></div>
+      <div class="stat"><div class="stat-val">${stats.totalInvoices||0}</div><div class="stat-label">Invoices</div></div>
+      <div class="stat"><div class="stat-val">${stats.totalClients||0}</div><div class="stat-label">Clients</div></div>
+      <div class="stat"><div class="stat-val">${(stats.unbilledHours||0).toFixed(1)}h</div><div class="stat-label">Unbilled Hours</div></div>
+    </div>
+    <div class="card"><h3 style="margin-bottom:16px">Recent Invoices</h3>
+    ${invoices.length === 0 ? '<div class="empty">No invoices yet.</div>' : `<table>
+    <thead><tr><th>Invoice</th><th>Client</th><th>Amount</th><th>Due</th><th>Status</th><th></th></tr></thead>
+    <tbody>${invoices.slice(0,5).map(inv => {
+      const c = clients.find(c=>c.id===inv.clientId);
+      return `<tr>
+        <td><strong>${inv.number}</strong></td>
+        <td>${c?.name||'—'}</td>
+        <td>${fmt(inv.total)}</td>
+        <td>${fmtDate(inv.dueDate)}</td>
+        <td>${statusBadge(inv.status)}</td>
+        <td><button class="btn btn-ghost btn-sm" onclick="viewInvoice('${inv.id}')">View</button></td>
+      </tr>`;}).join('')}
+    </tbody></table>`}
+    </div>`;
+  } else if (page === 'invoices') {
+    main.innerHTML = `<div class="page-header"><h1>Invoices</h1><button class="btn btn-primary" onclick="showCreateInvoice()">+ New Invoice</button></div>
+    <div class="card">${invoices.length===0?'<div class="empty">No invoices yet.</div>':`<table>
+    <thead><tr><th>Invoice #</th><th>Client</th><th>Issued</th><th>Due</th><th>Total</th><th>Status</th><th></th></tr></thead>
+    <tbody>${invoices.map(inv=>{const c=clients.find(c=>c.id===inv.clientId);return `<tr>
+      <td><strong>${inv.number}</strong></td><td>${c?.name||'—'}</td>
+      <td>${fmtDate(inv.issuedDate)}</td><td>${fmtDate(inv.dueDate)}</td>
+      <td>${fmt(inv.total)}</td><td>${statusBadge(inv.status)}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="viewInvoice('${inv.id}')">View</button></td>
+    </tr>`;}).join('')}</tbody></table>`}</div>`;
+  } else if (page === 'clients') {
+    main.innerHTML = `<div class="page-header"><h1>Clients</h1><button class="btn btn-primary" onclick="showAddClient()">+ Add Client</button></div>
+    <div class="card">${clients.length===0?'<div class="empty">No clients yet.</div>':`<table>
+    <thead><tr><th>Name</th><th>Email</th><th>Currency</th><th>Tax Rate</th><th>Since</th><th></th></tr></thead>
+    <tbody>${clients.map(c=>`<tr><td><strong>${c.name}</strong></td><td>${c.email||'—'}</td>
+      <td>${c.currency||'USD'}</td><td>${c.taxRate||0}%</td><td>${fmtDate(c.createdAt)}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="editClient('${c.id}')">Edit</button></td></tr>`).join('')}</tbody></table>`}</div>`;
+  } else if (page === 'time') {
+    main.innerHTML = `<div class="page-header"><h1>Time Tracking</h1><button class="btn btn-primary" onclick="showLogTime()">+ Log Time</button></div>
+    <div class="card">${timeEntries.length===0?'<div class="empty">No time entries yet.</div>':`<table>
+    <thead><tr><th>Date</th><th>Client</th><th>Description</th><th>Hours</th><th>Rate</th><th>Total</th><th>Status</th><th></th></tr></thead>
+    <tbody>${timeEntries.map(e=>{const c=clients.find(c=>c.id===e.clientId);return `<tr>
+      <td>${fmtDate(e.date)}</td><td>${c?.name||'—'}</td><td>${e.description}</td>
+      <td>${e.hours}h</td><td>${fmt(e.rate)}/h</td><td>${fmt(e.hours*e.rate)}</td>
+      <td>${e.invoiceId?'<span class="badge badge-paid">Billed</span>':'<span class="badge badge-draft">Unbilled</span>'}</td>
+      <td>${!e.invoiceId?`<button class="btn btn-danger btn-sm" onclick="deleteTime('${e.id}')">✕</button>`:''}</td>
+    </tr>`;}).join('')}</tbody></table>`}</div>`;
+  } else if (page === 'settings') {
+    main.innerHTML = `<div class="page-header"><h1>Business Info</h1></div>
+    <div class="card" style="max-width:600px">
+    <div class="form-row">
+      <div class="form-group"><label>Business Name</label><input id="b-name" value="${business.name||''}"></div>
+      <div class="form-group"><label>Email</label><input id="b-email" value="${business.email||''}"></div>
+    </div>
+    <div class="form-group"><label>Address</label><input id="b-addr" value="${business.address||''}"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Tax ID / VAT Number</label><input id="b-tax" value="${business.taxId||''}"></div>
+      <div class="form-group"><label>Default Currency</label>
+        <select id="b-cur"><option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option><option value="CAD">CAD</option><option value="AUD">AUD</option></select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Default Rate (per hour)</label><input id="b-rate" type="number" value="${business.defaultRate||100}"></div>
+      <div class="form-group"><label>Default Tax Rate (%)</label><input id="b-taxrate" type="number" value="${business.defaultTaxRate||0}"></div>
+    </div>
+    <button class="btn btn-primary" onclick="saveBusiness()">Save</button>
+    </div>`;
+    document.getElementById('b-cur').value = business.currency || 'USD';
+  }
+}
+
+function closeModal() { document.querySelector('.modal-overlay')?.remove(); }
+
+function showAddClient() {
+  document.body.insertAdjacentHTML('beforeend',`<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal"><h2>Add Client</h2>
+  <div class="form-row"><div class="form-group"><label>Name *</label><input id="c-name"></div><div class="form-group"><label>Email</label><input id="c-email"></div></div>
+  <div class="form-group"><label>Address</label><input id="c-addr"></div>
+  <div class="form-row"><div class="form-group"><label>Currency</label><select id="c-cur"><option>USD</option><option>EUR</option><option>GBP</option><option>CAD</option></select></div>
+  <div class="form-group"><label>Tax Rate (%)</label><input id="c-tax" type="number" value="0"></div></div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveClient()">Save</button></div>
+  </div></div>`);
+}
+
+async function saveClient() {
+  try {
+    await api('POST','/api/clients',{name:document.getElementById('c-name').value,email:document.getElementById('c-email').value,address:document.getElementById('c-addr').value,currency:document.getElementById('c-cur').value,taxRate:parseFloat(document.getElementById('c-tax').value)||0});
+    clients = await api('GET','/api/clients'); closeModal(); toast('Client saved'); render();
+  } catch(e){toast(e.message,false);}
+}
+
+function showLogTime() {
+  document.body.insertAdjacentHTML('beforeend',`<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal"><h2>Log Time</h2>
+  <div class="form-group"><label>Client *</label><select id="t-client">${clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}</select></div>
+  <div class="form-group"><label>Description *</label><input id="t-desc"></div>
+  <div class="form-row"><div class="form-group"><label>Hours</label><input id="t-hours" type="number" value="1" step="0.25"></div>
+  <div class="form-group"><label>Rate ($/hr)</label><input id="t-rate" type="number" value="${business.defaultRate||100}"></div></div>
+  <div class="form-group"><label>Date</label><input id="t-date" type="date" value="${new Date().toISOString().split('T')[0]}"></div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveTime()">Save</button></div>
+  </div></div>`);
+}
+
+async function saveTime() {
+  try {
+    await api('POST','/api/time',{clientId:document.getElementById('t-client').value,description:document.getElementById('t-desc').value,hours:parseFloat(document.getElementById('t-hours').value),rate:parseFloat(document.getElementById('t-rate').value),date:document.getElementById('t-date').value});
+    [timeEntries,stats]=await Promise.all([api('GET','/api/time'),api('GET','/api/stats')]); closeModal(); toast('Time logged'); render();
+  } catch(e){toast(e.message,false);}
+}
+
+async function deleteTime(id) {
+  if(!confirm('Delete this entry?'))return;
+  try{await api('DELETE',`/api/time/${id}`);[timeEntries,stats]=await Promise.all([api('GET','/api/time'),api('GET','/api/stats')]);toast('Deleted');render();}catch(e){toast(e.message,false);}
+}
+
+function showCreateInvoice() {
+  document.body.insertAdjacentHTML('beforeend',`<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal"><h2>Create Invoice</h2>
+  <div class="form-group"><label>Client *</label><select id="inv-client" onchange="loadUnbilled()">${clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}</select></div>
+  <div class="form-group"><label>Items</label><div id="inv-items"></div><button class="btn btn-ghost btn-sm" onclick="addItem()" style="margin-top:8px">+ Add Item</button></div>
+  <div class="form-group"><label>Tax Rate (%)</label><input id="inv-tax" type="number" value="0"></div>
+  <div class="form-group"><label>Due Date</label><input id="inv-due" type="date" value="${new Date(Date.now()+30*864e5).toISOString().split('T')[0]}"></div>
+  <div class="form-group"><label>Notes</label><textarea id="inv-notes"></textarea></div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="createInvoice()">Create Invoice</button></div>
+  </div></div>`);
+  addItem();
+}
+
+let itemCount = 0;
+function addItem() {
+  const i = itemCount++;
+  const div = document.createElement('div');
+  div.id = `item-${i}`;
+  div.style.cssText = 'display:grid;grid-template-columns:3fr 1fr 1fr auto;gap:8px;margin-bottom:8px;align-items:start';
+  div.innerHTML = `<input placeholder="Description" class="ii-desc"><input placeholder="Qty" type="number" value="1" class="ii-qty" style="width:100%"><input placeholder="Price" type="number" class="ii-price" style="width:100%"><button class="btn btn-ghost btn-sm" onclick="this.parentElement.remove()">✕</button>`;
+  document.getElementById('inv-items').appendChild(div);
+}
+
+async function createInvoice() {
+  const clientId = document.getElementById('inv-client').value;
+  const items = [...document.getElementById('inv-items').querySelectorAll('div')].map(row => {
+    const desc = row.querySelector('.ii-desc').value;
+    const qty = parseFloat(row.querySelector('.ii-qty').value)||1;
+    const price = parseFloat(row.querySelector('.ii-price').value)||0;
+    return {description:desc,quantity:qty,unitPrice:price,total:qty*price};
+  }).filter(i=>i.description);
+  if(!items.length){toast('Add at least one item',false);return;}
+  try {
+    const inv = await api('POST','/api/invoices',{clientId,items,taxRate:parseFloat(document.getElementById('inv-tax').value)||0,dueDate:document.getElementById('inv-due').value,notes:document.getElementById('inv-notes').value});
+    [invoices,stats]=await Promise.all([api('GET','/api/invoices'),api('GET','/api/stats')]);
+    closeModal(); toast('Invoice created!'); viewInvoice(inv.id);
+  } catch(e){toast(e.message,false);}
+}
+
+function viewInvoice(id) {
+  window.open(`/api/invoices/${id}/html`, '_blank');
+}
+
+async function saveBusiness() {
+  try{
+    business=await api('PUT','/api/business',{name:document.getElementById('b-name').value,email:document.getElementById('b-email').value,address:document.getElementById('b-addr').value,taxId:document.getElementById('b-tax').value,currency:document.getElementById('b-cur').value,defaultRate:parseFloat(document.getElementById('b-rate').value)||100,defaultTaxRate:parseFloat(document.getElementById('b-taxrate').value)||0});
+    toast('Business info saved');
+  }catch(e){toast(e.message,false);}
+}
+
+async function editClient(id) {
+  const c = clients.find(x=>x.id===id); if(!c)return;
+  document.body.insertAdjacentHTML('beforeend',`<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal"><h2>Edit Client</h2>
+  <div class="form-row"><div class="form-group"><label>Name</label><input id="ec-name" value="${c.name}"></div><div class="form-group"><label>Email</label><input id="ec-email" value="${c.email}"></div></div>
+  <div class="form-group"><label>Address</label><input id="ec-addr" value="${c.address||''}"></div>
+  <div class="modal-footer"><button class="btn btn-danger" onclick="deleteClient('${id}')">Delete</button><div style="flex:1"></div><button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="updateClient('${id}')">Save</button></div>
+  </div></div>`);
+}
+
+async function updateClient(id) {
+  try{await api('PUT',`/api/clients/${id}`,{name:document.getElementById('ec-name').value,email:document.getElementById('ec-email').value,address:document.getElementById('ec-addr').value});clients=await api('GET','/api/clients');closeModal();toast('Saved');render();}catch(e){toast(e.message,false);}
+}
+
+async function deleteClient(id) {
+  if(!confirm('Delete client?'))return;
+  try{await api('DELETE',`/api/clients/${id}`);clients=await api('GET','/api/clients');closeModal();toast('Deleted');render();}catch(e){toast(e.message,false);}
+}
+
+(async()=>{await loadAll();render();})();
+</script>
+</body>
+</html>
