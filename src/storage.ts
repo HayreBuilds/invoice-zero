@@ -134,3 +134,23 @@ export function markOverdueInvoices(data: AppData): number {
   for (const inv of overdue) inv.status = "overdue";
   return overdue.length;
 }
+
+export function exportInvoicesCSV(data: AppData): string {
+  const headers = ["number","client","issued","due","total","currency","status","paid_date"];
+  const rows = data.invoices.map(inv => {
+    const client = data.clients.find(c => c.id === inv.clientId);
+    return [inv.number, client?.name ?? "Unknown", inv.issuedDate, inv.dueDate, inv.total, inv.currency, inv.status, inv.paidDate ?? ""]
+      .map(v => `"${String(v).replace(/"/g,'""')}"`).join(",");
+  });
+  return [headers.join(","), ...rows].join("\n");
+}
+
+export function exportTimeCSV(data: AppData): string {
+  const headers = ["date","client","description","hours","rate","total","status"];
+  const rows = data.timeEntries.map(e => {
+    const client = data.clients.find(c => c.id === e.clientId);
+    return [e.date, client?.name ?? "Unknown", e.description, e.hours, e.rate, (e.hours * e.rate).toFixed(2), e.invoiceId ? "billed" : "unbilled"]
+      .map(v => `"${String(v).replace(/"/g,'""')}"`).join(",");
+  });
+  return [headers.join(","), ...rows].join("\n");
+}
