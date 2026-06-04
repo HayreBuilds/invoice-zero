@@ -154,3 +154,14 @@ export function exportTimeCSV(data: AppData): string {
   });
   return [headers.join(","), ...rows].join("\n");
 }
+
+export function getOverdueInvoices(data: AppData): Invoice[] {
+  const today = new Date().toISOString().split("T")[0]!;
+  return data.invoices.filter(i => i.status === "sent" && i.dueDate < today);
+}
+
+export function markOverdueInvoices(data: AppData): number {
+  const overdue = getOverdueInvoices(data);
+  for (const inv of overdue) inv.status = "overdue";
+  return overdue.length;
+}
