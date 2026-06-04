@@ -186,3 +186,6 @@ server.listen(PORT, HOST, () => {
 // TODO: POST /api/invoices/:id/duplicate — copy invoice with new date and draft status
 // TODO: GET /api/invoices?status=overdue — filter by status
 // TODO: POST /api/invoices/:id/send — mark as sent and record sent date
+// TODO: POST /api/invoices/:id/duplicate — copy invoice with new date and draft status
+// TODO: GET /api/invoices?status=overdue — filter by status
+// TODO: POST /api/invoices/:id/send — mark as sent and record sent date
