@@ -1,135 +1,89 @@
-# invoice-zero
+# 🧾 invoice-zero
 
-> Free, self-hosted invoicing for freelancers. Create clients, log hours, generate PDF invoices, track payments. No subscription. No cloud. No account. Runs on your machine.
+[![Build Status](https://img.shields.io/github/actions/workflow/status/HayreBuilds/invoice-zero/ci.yml?branch=main)](https://github.com/HayreBuilds/invoice-zero/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/HayreBuilds/invoice-zero/pulls)
+[![Star History](https://img.shields.io/github/stars/HayreBuilds/invoice-zero?style=social)](https://github.com/HayreBuilds/invoice-zero/stargazers)
 
+**Free, self-hosted invoicing tool for freelancers. No subscriptions. No cloud. You own your data.**
+
+> Tired of paying $20/month for FreshBooks or Wave just to send a few invoices? **invoice-zero** is a dead-simple, local-first app that runs on your machine and generates professional PDFs in seconds.
+
+---
+
+## 🚀 Quick Start
+
+```bash
+# Start the local invoicing server
+npx invoice-zero
 ```
-$ npx invoice-zero
 
-  ◆ invoice-zero — http://127.0.0.1:3333
-  Data: ~/.invoice-zero/data.json
+Open **[http://localhost:3000](http://localhost:3000)** to start creating your first invoice.
+
+---
+
+## ✨ Key Features
+
+- **🏠 Self-Hosted & Private**: All data stays on your machine in a simple JSON file.
+- **📄 Professional PDFs**: Generate clean, modern invoices ready to send to clients.
+- **🕒 Time Tracking**: Log hours per client and convert them into invoice line items instantly.
+- **📊 Payment Tracking**: Mark invoices as paid, overdue, or pending.
+- **📦 Data Portability**: Export your entire history to CSV for tax season.
+- **⚡ Zero Setup**: No database to configure. No account to create.
+
+---
+
+## 💻 Installation
+
+```bash
+npm install -g invoice-zero
 ```
 
 ---
 
-## Install
+## 🛠️ Usage
 
-```bash
-# Run immediately
-npx invoice-zero
+### Manage Clients & Projects
+Add your clients and their billing details through the intuitive web interface.
 
-# Install globally
-npm install -g invoice-zero
-invoice-zero
-```
+### Generate Invoices
+Create new invoices, add line items (manual or from logged hours), and download the PDF.
 
-Open http://127.0.0.1:3333 — your invoicing app is running.
+### Track Payments
+View a dashboard of your total earnings and outstanding payments.
 
-## Features
+---
 
-**Clients**
-- Add and manage clients with contact info, billing address, and default currency
-- Per-client tax rates
-- Multi-currency support (USD, EUR, GBP, CAD, AUD)
+## 🔍 Why "Zero"?
 
-**Time Tracking**
-- Log hours with description, rate, and date
-- See unbilled vs billed hours at a glance
-- Per-client unbilled hours summary
+1. **Zero Cost**: No monthly subscriptions or transaction fees.
+2. **Zero Cloud**: Your sensitive client data never leaves your hard drive.
+3. **Zero Friction**: Start the app and send an invoice in under 2 minutes.
 
-**Invoices**
-- Create invoices from line items or from tracked time entries
-- Auto-numbered (INV-1001, INV-1002, ...)
-- Professional HTML invoice — click "Print / Save as PDF" to export
-- Status tracking: Draft → Sent → Paid / Overdue
-- Due date, notes, and tax support
+---
 
-**Business Info**
-- Set your business name, email, address, and tax ID
-- Default hourly rate and tax rate
-- Shows on every invoice header
+## ⚙️ Configuration
 
-**Dashboard**
-- Total paid, outstanding, and unbilled hours at a glance
+| Option | Default | Description |
+|:---|:---|:---|
+| `--port <n>` | `3000` | Port for the web interface |
+| `--data <path>`| `~/.invoice-zero/` | Directory to store invoices and client data |
+| `--currency` | `USD` | Default currency for new invoices |
 
-## No Subscription. No Cloud.
+---
 
-Everything is stored in `~/.invoice-zero/data.json`. Your data is yours.
+## 🤝 Contributing
 
-Compare to alternatives:
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
-| | invoice-zero | FreshBooks | Wave | HoneyBook |
-|---|---|---|---|---|
-| Price | **Free** | $17/mo | Free (acquired) | $36/mo |
-| Self-hosted | ✅ | ❌ | ❌ | ❌ |
-| No account | ✅ | ❌ | ❌ | ❌ |
-| Open source | ✅ | ❌ | ❌ | ❌ |
-| PDF invoices | ✅ | ✅ | ✅ | ✅ |
-| Time tracking | ✅ | ✅ | ✅ | ✅ |
+---
 
-## PDF Invoices
+## 📄 License
 
-invoice-zero generates clean HTML invoices with a "Print / Save as PDF" button. Use your browser's built-in print-to-PDF — works on Chrome, Firefox, Safari, and Edge with no extra software.
+Distributed under the MIT License. See `LICENSE` for more information.
 
-## Data Storage
+---
 
-All data lives in `~/.invoice-zero/data.json`. Back this file up to keep your records. It's plain JSON — import it into any other tool if you ever switch.
+## 💖 Star History
 
-## API
-
-invoice-zero exposes a local REST API:
-
-```bash
-# Clients
-GET    /api/clients
-POST   /api/clients
-PUT    /api/clients/:id
-DELETE /api/clients/:id
-
-# Time tracking
-GET    /api/time?clientId=&unbilled=true
-POST   /api/time
-PUT    /api/time/:id
-DELETE /api/time/:id
-
-# Invoices
-GET    /api/invoices
-POST   /api/invoices
-GET    /api/invoices/:id/html   ← printable HTML invoice
-PUT    /api/invoices/:id
-DELETE /api/invoices/:id
-
-# Stats
-GET    /api/stats
-```
-
-## License
-
-MIT
-
-## Backup
-
-All data is in `~/.invoice-zero/data.json`. Back it up regularly:
-
-```bash
-# Daily backup
-cp ~/.invoice-zero/data.json ~/Dropbox/invoice-zero-backup-$(date +%Y%m%d).json
-```
-
-Or set up a cron job:
-```
-0 9 * * * cp ~/.invoice-zero/data.json ~/backups/invoice-$(date +%Y%m%d).json
-```
-
-## Backup
-
-All data is in `~/.invoice-zero/data.json`. Back it up regularly:
-
-```bash
-# Daily backup
-cp ~/.invoice-zero/data.json ~/Dropbox/invoice-zero-backup-$(date +%Y%m%d).json
-```
-
-Or set up a cron job:
-```
-0 9 * * * cp ~/.invoice-zero/data.json ~/backups/invoice-$(date +%Y%m%d).json
-```
+[![Star History Chart](https://api.star-history.com/svg?repos=HayreBuilds/invoice-zero&type=Date)](https://star-history.com/#HayreBuilds/invoice-zero&Date)
