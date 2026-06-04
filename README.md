@@ -119,3 +119,17 @@ Or set up a cron job:
 ```
 0 9 * * * cp ~/.invoice-zero/data.json ~/backups/invoice-$(date +%Y%m%d).json
 ```
+
+## Backup
+
+All data is in `~/.invoice-zero/data.json`. Back it up regularly:
+
+```bash
+# Daily backup
+cp ~/.invoice-zero/data.json ~/Dropbox/invoice-zero-backup-$(date +%Y%m%d).json
+```
+
+Or set up a cron job:
+```
+0 9 * * * cp ~/.invoice-zero/data.json ~/backups/invoice-$(date +%Y%m%d).json
+```
