@@ -1,0 +1,39 @@
+{
+  "name": "invoice-zero",
+  "version": "1.0.0",
+  "description": "Free, self-hosted invoicing for freelancers. Create clients, log hours, generate PDF invoices, track payments. No subscription, no cloud.",
+  "bin": {
+    "invoice-zero": "./dist/server.js"
+  },
+  "main": "./dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "ts-node src/server.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "invoicing",
+    "freelancer",
+    "self-hosted",
+    "pdf",
+    "billing",
+    "time-tracking"
+  ],
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/invoice-zero"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/invoice-zero/issues"
+  }
+}
